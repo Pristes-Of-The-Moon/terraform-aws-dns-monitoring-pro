@@ -1,0 +1,62 @@
+name: iac-scan
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+  schedule:
+    - cron: "0 2 * * 0" # weekly
+  workflow_dispatch:
+
+# Default to least-privilege. Jobs can request more as needed.
+permissions:
+  contents: read
+
+jobs:
+  tflint:
+    name: tflint (templates)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33
+        with:
+          tflint_version: v0.53.0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_wrapper: false
+
+      # NOTE: Our .tflint.hcl lives in the repo root. When we run inside ./templates,
+      # we pass --config to ensure the config is applied (including rule disables).
+      - name: TFLint init
+        working-directory: templates
+        run: tflint --init --config "${GITHUB_WORKSPACE}/.tflint.hcl"
+
+      - name: TFLint (recursive)
+        working-directory: templates
+        run: tflint --recursive --config "${GITHUB_WORKSPACE}/.tflint.hcl"
+
+  tfsec:
+    name: tfsec (templates)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Run tfsec (SARIF)
+        uses: aquasecurity/tfsec-sarif-action@21ded20e8ca120cd9d3d6ab04ef746477542a608
+        with:
+          working_directory: templates
+          sarif_file: tfsec.sarif
+
+      - name: Upload tfsec SARIF
+        uses: github/codeql-action/upload-sarif@5fe9434cd24fe243e33e7f3305f8a5b519b70280
+        with:
+          sarif_file: tfsec.sarif

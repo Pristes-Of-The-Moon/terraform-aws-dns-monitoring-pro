@@ -1,0 +1,13 @@
+# Terraform module code
+/modules/ @abcxyz/Codev
+
+# Examples
+/example/ @abcxyz/Codev
+
+# CI / workflows
+.github/workflows/ @abcxyz/Codev
+
+# Docs (optional)
+/modules/README.md @abcxyz/Codev
+README.md @abcxyz/Codev
+CONTRIBUTING.md @abcxyz/Codev

@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-fmt:
+    name: terraform fmt (templates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: ">= 1.12.0"
+      - name: terraform fmt check
+        run: |
+          terraform fmt -check -recursive templates
+
+  markdownlint:
+    name: markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: DavidAnson/markdownlint-cli2-action@05f32210e84442804257b2a6f20b273450ec8265
+        with:
+          config: .markdownlint-cli2.yaml
+          globs: |
+            **/*.md
+
+  link-check:
+    name: link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Check LICENSE_SCOPE.md exists
+        run: |
+          test -f LICENSE_SCOPE.md
+          git ls-files --error-unmatch LICENSE_SCOPE.md
+
+      - name: lychee link check
+        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0
+        with:
+          args: >
+            --config lychee.toml
+            README.md docs/**/*.md templates/**/*.md
+
+  template-conventions:
+    name: template conventions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.11"
+      - name: validate templates
+        run: |
+          python .github/scripts/validate_templates.py
+
+  terraform-validate-templates:
+    name: terraform validate (templates, stubbed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.0"
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.11"
+
+      - name: terraform validate templates (stubbed)
+        run: |
+          python .github/scripts/terraform_validate_templates.py
+
