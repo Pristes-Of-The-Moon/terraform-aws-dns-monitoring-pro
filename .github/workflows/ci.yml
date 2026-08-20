@@ -44,7 +44,7 @@ jobs:
           git ls-files --error-unmatch LICENSE_SCOPE.md
 
       - name: lychee link check
-        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8
         with:
           args: >
             --config lychee.toml
